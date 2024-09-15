@@ -3,16 +3,19 @@
   <head>
     <link rel="stylesheet" href="style.css" />
     <title>Socket.IO chat</title>
-    <style>
-    </style>
   </head>
   <body id="logged-out">
     <section id="chat">
         <ul id="messages">
-        </ul><ul id="users">
+        </ul>
+        <ul id="users">
         </ul>
         <form action="">
-          <input id="m" autocomplete="off" /><button>Send</button>
+          <select id="recipient">
+            <option value="">Everyone</option>
+          </select>
+          <input id="m" autocomplete="off" />
+          <button>Send</button>
         </form>
      </section>
     <section id="login">

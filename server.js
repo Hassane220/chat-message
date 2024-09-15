@@ -66,8 +66,17 @@ io.on('connection', function (socket) {
     // Gestion des messages de chat
     socket.on('chat-message', function (message) {
         if (loggedUser && loggedUser.username) {
-            message.username = loggedUser.username;
-            io.emit('chat-message', message);
+            message.sender = loggedUser.username; // Ajouter l'expéditeur
+            if (message.recipient === "" || message.recipient === loggedUser.username) {
+                // Si le message est destiné à tout le monde ou à l'expéditeur lui-même
+                io.emit('chat-message', message);
+            } else {
+                // Si le message est destiné à un autre utilisateur
+                var recipientSocket = users.find(user => user.username === message.recipient);
+                if (recipientSocket) {
+                    io.to(recipientSocket.socketId).emit('chat-message', message);
+                }
+            }
             messages.push(message);
             if (messages.length > 150) {
                 messages.splice(0, 1);
@@ -103,43 +112,49 @@ io.on('connection', function (socket) {
     });
 
     /**
- * Liste des utilisateurs en train de saisir un message
- */
- var typingUsers = [];
+    * Liste des utilisateurs en train de saisir un message
+    */
+    var typingUsers = [];
 
- /**
-   * Réception de l'événement 'start-typing'
-   * L'utilisateur commence à saisir son message
-   */
- socket.on('start-typing', function () {
-    // Ajout du user à la liste des utilisateurs en cours de saisie
-    if (typingUsers.indexOf(loggedUser) === -1) {
-      typingUsers.push(loggedUser);
-    }
-    io.emit('update-typing', typingUsers);
-  });
+    /**
+      * Réception de l'événement 'start-typing'
+      * L'utilisateur commence à saisir son message
+      */
+    socket.on('start-typing', function () {
+        // Ajout du user à la liste des utilisateurs en cours de saisie
+        if (typingUsers.indexOf(loggedUser) === -1) {
+            typingUsers.push(loggedUser);
+        }
+        io.emit('update-typing', typingUsers);
+    });
 
-  /**
-   * Réception de l'événement 'stop-typing'
-   * L'utilisateur a arrêter de saisir son message
-   */
-  socket.on('stop-typing', function () {
-    var typingUserIndex = typingUsers.indexOf(loggedUser);
-    if (typingUserIndex !== -1) {
-      typingUsers.splice(typingUserIndex, 1);
-    }
-    io.emit('update-typing', typingUsers);
-  });
-  socket.on('disconnect', function () {
-    if (loggedUser !== undefined) {
-      // Si jamais il était en train de saisir un texte, on l'enlève de la liste
-      var typingUserIndex = typingUsers.indexOf(loggedUser);
-      if (typingUserIndex !== -1) {
-        typingUsers.splice(typingUserIndex, 1);
-      }
-    }
-  });
+    /**
+     * Réception de l'événement 'stop-typing'
+     * L'utilisateur a arrêter de saisir son message
+     */
+    socket.on('stop-typing', function () {
+        var typingUserIndex = typingUsers.indexOf(loggedUser);
+        if (typingUserIndex !== -1) {
+            typingUsers.splice(typingUserIndex, 1);
+        }
+        io.emit('update-typing', typingUsers);
+    });
 
+    socket.on('disconnect', function () {
+        if (loggedUser !== undefined) {
+            // Si jamais il était en train de saisir un texte, on l'enlève de la liste
+            var typingUserIndex = typingUsers.indexOf(loggedUser);
+            if (typingUserIndex !== -1) {
+                typingUsers.splice(typingUserIndex, 1);
+            }
+        }
+    });
 
-
+    // Associer le socketId à l'utilisateur
+    socket.on('user-login', function(user) {
+        if (loggedUser) {
+            loggedUser.socketId = socket.id;
+        }
+    });
 });
+
