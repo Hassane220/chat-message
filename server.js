@@ -101,4 +101,45 @@ io.on('connection', function (socket) {
             console.log('Un utilisateur non identifié s\'est déconnecté');
         }
     });
+
+    /**
+ * Liste des utilisateurs en train de saisir un message
+ */
+ var typingUsers = [];
+
+ /**
+   * Réception de l'événement 'start-typing'
+   * L'utilisateur commence à saisir son message
+   */
+ socket.on('start-typing', function () {
+    // Ajout du user à la liste des utilisateurs en cours de saisie
+    if (typingUsers.indexOf(loggedUser) === -1) {
+      typingUsers.push(loggedUser);
+    }
+    io.emit('update-typing', typingUsers);
+  });
+
+  /**
+   * Réception de l'événement 'stop-typing'
+   * L'utilisateur a arrêter de saisir son message
+   */
+  socket.on('stop-typing', function () {
+    var typingUserIndex = typingUsers.indexOf(loggedUser);
+    if (typingUserIndex !== -1) {
+      typingUsers.splice(typingUserIndex, 1);
+    }
+    io.emit('update-typing', typingUsers);
+  });
+  socket.on('disconnect', function () {
+    if (loggedUser !== undefined) {
+      // Si jamais il était en train de saisir un texte, on l'enlève de la liste
+      var typingUserIndex = typingUsers.indexOf(loggedUser);
+      if (typingUserIndex !== -1) {
+        typingUsers.splice(typingUserIndex, 1);
+      }
+    }
+  });
+
+
+
 });

@@ -149,3 +149,9 @@ section#chat #users li {
     color: black;
     transition: all 0.5s;
 }
+section#chat #users li span.typing {
+    float: right;
+    font-style: italic;
+    color: #eee;
+    display: none;
+}

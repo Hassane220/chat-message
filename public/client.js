@@ -82,3 +82,45 @@ $('#login form').submit(function (e) {
       });
     }
   });
+  /**
+ * Connection d'un nouvel utilisateur
+ */
+socket.on('user-login', function (user) {
+    $('#users').append($('<li class="' + user.username + ' new">').html(user.username + '<span class="typing">typing</span>'));
+    setTimeout(function () {
+      $('#users li.new').removeClass('new');
+    }, 1000);
+  });
+  /**
+ * Détection saisie utilisateur
+ */
+var typingTimer;
+var isTyping = false;
+
+$('#m').keypress(function () {
+  clearTimeout(typingTimer);
+  if (!isTyping) {
+    socket.emit('start-typing');
+    isTyping = true;
+  }
+});
+
+$('#m').keyup(function () {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(function () {
+    if (isTyping) {
+      socket.emit('stop-typing');
+      isTyping = false;
+    }
+  }, 500);
+});
+/**
+ * Gestion saisie des autres utilisateurs
+ */
+socket.on('update-typing', function (typingUsers) {
+    $('#users li span.typing').hide();
+    for (i = 0; i < typingUsers.length; i++) {
+      $('#users li.' + typingUsers[i].username + ' span.typing').show();
+    }
+  });
+  
